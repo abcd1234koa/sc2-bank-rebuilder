@@ -1,0 +1,27 @@
+name: Render Keep-Alive Ping
+
+on:
+  schedule:
+    - cron: '*/5 0-14 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping_service:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Render Properly
+        run: |
+          URL="https://sc2-bank-rebuilder.onrender.com/ping"
+
+          echo "Pinging ${URL} at $(date) (UTC)..."
+
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$URL")
+
+          echo "HTTP Status: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "Ping successful. Service is awake."
+          else
+            echo "Ping failed with status $HTTP_STATUS"
+            exit 1
+          fi

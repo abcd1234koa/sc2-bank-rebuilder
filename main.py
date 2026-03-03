@@ -26,7 +26,7 @@ def upload():
 
         # 🔥 bank 재구성 실행
         subprocess.run(
-            ["python3", "-m", "s2repdump.main", "--bank-rebuild", replay_path],
+            ["python", "-m", "s2repdump.main", "--bank-rebuild", replay_path],
             check=True)
 
         # 🔥 ZIP 생성

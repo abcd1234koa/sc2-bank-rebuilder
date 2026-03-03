@@ -3,6 +3,7 @@ import subprocess
 import os
 import zipfile
 import shutil
+import sys
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  #20mb 제한
@@ -20,16 +21,28 @@ def upload():
         replay_path = "temp.SC2Replay"
         file.save(replay_path)
 
-        # 🔥 기존 out 폴더 삭제
+        # 기존 out 폴더 삭제
         if os.path.exists("out"):
             shutil.rmtree("out")
 
-        # 🔥 bank 재구성 실행
-        subprocess.run(
-            ["python", "-m", "s2repdump.main", "--bank-rebuild", replay_path],
-            check=True)
+        # bank 재구성 실행
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "s2repdump.main", "--bank-rebuild", replay_path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            print(result.stdout)
+            print(result.stderr)
 
-        # 🔥 ZIP 생성
+        except subprocess.CalledProcessError as e:
+            print("=== ERROR ===")
+            print(e.stdout)
+            print(e.stderr)
+            return f"에러 발생:\n{e.stderr}", 500
+
+        # ZIP 생성
         zip_name = "banks.zip"
         with zipfile.ZipFile(zip_name, "w") as zipf:
             for root, dirs, files in os.walk("out"):

@@ -3,8 +3,6 @@ name: Render Keep-Alive Ping
 on:
   schedule:
     - cron: '*/5 * * * *'
-  workflow_dispatch:
-
 jobs:
   ping_service:
     runs-on: ubuntu-latest

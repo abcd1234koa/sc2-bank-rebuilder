@@ -4,6 +4,8 @@ import os
 import zipfile
 import shutil
 import sys
+import uuid
+import tempfile
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  #20mb 제한
@@ -17,49 +19,65 @@ def allowed_file(filename):
 @app.route("/", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
+        if "file" not in request.files:
+            return "파일이 없습니다.", 400
+
         file = request.files["file"]
-        replay_path = "temp.SC2Replay"
-        file.save(replay_path)
 
-        # 기존 out 폴더 삭제
-        if os.path.exists("out"):
-            shutil.rmtree("out")
+        if file.filename == "":
+            return "파일 이름이 비어 있습니다.", 400
 
-        # bank 재구성 실행
+        if not allowed_file(file.filename):
+            return ".SC2Replay 파일만 업로드 가능합니다.", 400
+
+        # 작업 폴더 생성 (요청마다 분리)
+        job_id = str(uuid.uuid4())
+        job_dir = os.path.join(tempfile.gettempdir(), f"sc2job_{job_id}")
+        os.makedirs(job_dir)
+
+        replay_path = os.path.join(job_dir, "temp.SC2Replay")
+        out_dir = os.path.join(job_dir, "out")
+        zip_name = os.path.join(job_dir, "banks.zip")
+
         try:
+            file.save(replay_path)
+
+            # bank 재구성 실행
             result = subprocess.run(
                 [sys.executable, "-m", "s2repdump.main", "--bank-rebuild", replay_path],
+                cwd=job_dir,
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                timeout=30
             )
+
             print(result.stdout)
             print(result.stderr)
+
+        except subprocess.TimeoutExpired:
+            shutil.rmtree(job_dir, ignore_errors=True)
+            return "리플레이 처리 시간이 초과되었습니다.", 500
 
         except subprocess.CalledProcessError as e:
             print("=== ERROR ===")
             print(e.stdout)
             print(e.stderr)
+            shutil.rmtree(job_dir, ignore_errors=True)
             return f"에러 발생:\n{e.stderr}", 500
 
         # ZIP 생성
-        zip_name = "banks.zip"
         with zipfile.ZipFile(zip_name, "w") as zipf:
-            for root, dirs, files in os.walk("out"):
+            for root, dirs, files in os.walk(out_dir):
                 for f in files:
                     full_path = os.path.join(root, f)
-                    zipf.write(full_path, os.path.relpath(full_path, "out"))
-
-        os.remove(replay_path)
+                    zipf.write(full_path, os.path.relpath(full_path, out_dir))
 
         response = send_file(zip_name, as_attachment=True)
 
         @response.call_on_close
         def cleanup():
-            if os.path.exists(zip_name):
-                os.remove(zip_name)
-            if os.path.exists("out"):
-                shutil.rmtree("out")
+            shutil.rmtree(job_dir, ignore_errors=True)
 
         return response
 

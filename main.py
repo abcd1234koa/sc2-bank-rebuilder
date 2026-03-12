@@ -69,6 +69,7 @@ def upload():
         <meta charset="UTF-8">
         <title>SC2 리플레이 복구 도구</title>
         <style>
+
 body {
 background: linear-gradient(135deg, #1f252c, #2b3440);
 color: #f1f3f5;
@@ -77,13 +78,31 @@ text-align: center;
 padding-top: 100px;
 }
 
+/* 레이아웃 추가 */
+.layout {
+display: flex;
+justify-content: center;
+gap: 30px;
+align-items: flex-start;
+}
+
 .box {
 background: #2f3944;
 padding: 40px;
 border-radius: 15px;
 width: 420px;
-margin: auto;
 box-shadow: 0 15px 40px rgba(0,0,0,0.45);
+}
+
+.side-panel {
+width: 260px;
+background: #2f3944;
+padding: 30px;
+border-radius: 15px;
+box-shadow: 0 15px 40px rgba(0,0,0,0.45);
+text-align: left;
+font-size: 14px;
+line-height: 1.6;
 }
 
 .drop-area {
@@ -136,6 +155,9 @@ color: #b8c1cc;
 </style>
     </head>
     <body>
+
+<div class="layout">
+
         <div class="box">
             <h2>SC2 리플레이 기반 저장소 복구 도구</h2>
 
@@ -174,6 +196,23 @@ color: #b8c1cc;
                 </div>
             </div>
         </div>
+
+
+        <div class="side-panel">
+        <b>복구 과정</b><br><br>
+
+        1️⃣ Replay 분석<br>
+        2️⃣ Bank 데이터 추출<br>
+        3️⃣ Banks.zip 생성<br><br>
+
+        완료 후 자동 다운로드 됩니다.<br><br>
+
+        <b>주의</b><br>
+        일부 리플레이는<br>
+        Bank 데이터가 없을 수 있습니다.
+        </div>
+
+</div>
 
         <script>
             const dropArea = document.getElementById("dropArea");

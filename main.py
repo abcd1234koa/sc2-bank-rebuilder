@@ -30,7 +30,7 @@ def upload():
         if not allowed_file(file.filename):
             return ".SC2Replay 파일만 업로드 가능합니다.", 400
 
-        # 작업 폴더 생성 (요청마다 분리)
+        # 작업 폴더 생성
         job_id = str(uuid.uuid4())
         job_dir = os.path.join(tempfile.gettempdir(), f"sc2job_{job_id}")
         os.makedirs(job_dir)
@@ -44,7 +44,7 @@ def upload():
 
             # bank 재구성 실행
             result = subprocess.run(
-                [sys.executable, "-m", "s2repdump.main", "--bank-rebuild", replay_path],
+                [sys.executable, "-m", "s2repdump.main", "--bank-rebuild", "temp.SC2Replay"],
                 cwd=job_dir,
                 capture_output=True,
                 text=True,
@@ -65,6 +65,11 @@ def upload():
             print(e.stderr)
             shutil.rmtree(job_dir, ignore_errors=True)
             return f"에러 발생:\n{e.stderr}", 500
+
+        # out 폴더 확인
+        if not os.path.exists(out_dir):
+            shutil.rmtree(job_dir, ignore_errors=True)
+            return "bank 생성 실패", 500
 
         # ZIP 생성
         with zipfile.ZipFile(zip_name, "w") as zipf:
